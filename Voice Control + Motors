@@ -1,0 +1,94 @@
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+#include "DFRobot_DF2301Q.h"
+
+/* ================= PCA9685 ================= */
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+
+/* ================= Voice Module ================= */
+DFRobot_DF2301Q_I2C voice;
+
+/* ================= Servo Settings ================= */
+#define SERVO_MIN  110   // adjust if needed
+#define SERVO_MAX  510
+
+const int NUM_SERVOS = 5;
+int servoChannels[NUM_SERVOS] = {0, 1, 2, 3, 4};
+
+/* ================= Helper Functions ================= */
+
+int angleToPulse(int angle) {
+  return map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
+}
+
+void setServoAngle(int servo, int angle) {
+  pwm.setPWM(servoChannels[servo], 0, angleToPulse(angle));
+}
+
+void moveAllTo(int angle) {
+  for (int i = 0; i < NUM_SERVOS; i++) {
+    setServoAngle(i, angle);
+  }
+}
+
+/*
+  Progressive pattern:
+  level = 1 → servo 1 at 0°, others 180°
+  level = 2 → servos 1,2 at 0°, others 180°
+  ...
+  level = 5 → all servos at 0°
+*/
+void applyPattern(int level) {
+  for (int i = 0; i < NUM_SERVOS; i++) {
+
+    if (level == 5) {
+      // All servos at 0°
+      setServoAngle(i, 0);
+    }
+    else if (i >= 1 && i <= level) {
+      // Locked group → 0°
+      setServoAngle(i, 0);
+    }
+    else {
+      // Others → 180°
+      setServoAngle(i, 180);
+    }
+  }
+}
+
+/* ================= Setup ================= */
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();
+
+  // PCA9685 init
+  pwm.begin();
+  pwm.setPWMFreq(50);   // standard servo frequency
+  delay(10);
+
+  // Voice module init
+  if (voice.begin() != 0) {
+    Serial.println("❌ Voice module not detected");
+    while (1);
+  }
+
+  Serial.println("✅ Voice module ready");
+
+  // Startup position
+  moveAllTo(90);
+}
+
+/* ================= Loop ================= */
+void loop() {
+
+  uint8_t cmd = voice.getCMDID();
+
+  if (cmd >= 1 && cmd <= 5) {
+    Serial.print("Voice command: ");
+    Serial.println(cmd);
+
+    applyPattern(cmd);
+  }
+
+  delay(100);
+}
