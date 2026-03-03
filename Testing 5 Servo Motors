@@ -1,0 +1,73 @@
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+
+// Create PCA9685 object (default I2C address 0x40)
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+
+// Adjust these for your MG995 servos
+#define SERVO_MIN  120   // ~0 degrees
+#define SERVO_MAX  600   // ~180 degrees
+
+// Number of servos you are using
+#define NUM_SERVOS 5
+
+void setup() 
+{
+  pwm.begin();
+  pwm.setPWMFreq(50);   // Standard servo frequency (50 Hz)
+
+  delay(10);
+}
+
+void loop() 
+{
+  // Move all servos to 0°
+  for (int i = 0; i < NUM_SERVOS; i++) 
+  {
+    pwm.setPWM(i, 0, SERVO_MIN);
+  }
+  delay(1000); //every 1sec
+
+  // Move all servos to 180°
+  for (int i = 0; i < NUM_SERVOS; i++) 
+  {
+    pwm.setPWM(i, 0, SERVO_MAX);
+  }
+  delay(1000);
+}#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+
+// Create PCA9685 object (default I2C address 0x40)
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+
+// Adjust these for your MG995 servos
+#define SERVO_MIN  120   // ~0 degrees
+#define SERVO_MAX  600   // ~180 degrees
+
+// Number of servos you are using
+#define NUM_SERVOS 5
+
+void setup() 
+{
+  pwm.begin();
+  pwm.setPWMFreq(50);   // Standard servo frequency (50 Hz)
+
+  delay(10);
+}
+
+void loop() 
+{
+  // Move all servos to 0°
+  for (int i = 0; i < NUM_SERVOS; i++) 
+  {
+    pwm.setPWM(i, 0, SERVO_MIN);
+  }
+  delay(1000); //every 1sec
+
+  // Move all servos to 180°
+  for (int i = 0; i < NUM_SERVOS; i++) 
+  {
+    pwm.setPWM(i, 0, SERVO_MAX);
+  }
+  delay(1000);
+}
