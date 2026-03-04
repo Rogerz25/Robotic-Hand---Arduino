@@ -1,0 +1,81 @@
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+#include "DFRobot_DF2301Q.h"
+
+// =======================
+// Voice module (I2C)
+// =======================
+DFRobot_DF2301Q_I2C asr;
+
+// =======================
+// PCA9685
+// =======================
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+
+// =======================
+// Servo settings
+// =======================
+#define SERVO_MIN 150
+#define SERVO_MAX 600
+
+// Servo channels to control
+uint8_t servos[] = {0, 1, 2, 3, 4};
+const uint8_t SERVO_COUNT = sizeof(servos) / sizeof(servos[0]);
+
+uint16_t angleToPulse(int angle) {
+  return map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
+}
+
+void moveAllServos(int angle) {
+  uint16_t pulse = angleToPulse(angle);
+  for (uint8_t i = 0; i < SERVO_COUNT; i++) {
+    pwm.setPWM(servos[i], 0, pulse);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();
+
+  // Init PCA9685
+  pwm.begin();
+  pwm.setPWMFreq(50);
+  delay(10);
+
+  // Init voice module (I2C)
+  while (!asr.begin()) {
+    Serial.println("Voice module not detected");
+    delay(2000);
+  }
+
+  Serial.println("Voice module ready");
+
+  // Start all servos at 0°
+  moveAllServos(0);
+}
+
+void loop() {
+  uint8_t CMDID = asr.getCMDID();
+
+  switch (CMDID) {
+
+    case 5:
+      Serial.println("CMDID 5 → All servos to 180°");
+      moveAllServos(180);
+      break;
+
+    case 6:
+      Serial.println("CMDID 6 → All servos to 0°");
+      moveAllServos(0);
+      break;
+
+    default:
+      if (CMDID != 0) {
+        Serial.print("Unknown CMDID: ");
+        Serial.println(CMDID);
+      }
+      break;
+  }
+
+  delay(300);
+}
