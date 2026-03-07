@@ -6,6 +6,8 @@ Library Dependencies for Arduino.IDE:
 2) DFRobot_DF2301Q
 
 PCA9685 Board Layout:
+======================
+
 Arduino - PCA Board
 A4 → SDA
 A5 → SCL
