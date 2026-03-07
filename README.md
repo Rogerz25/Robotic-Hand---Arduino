@@ -16,6 +16,7 @@ A5 → SCL
 GND → GND
 
 Voice Module Layout:
+=
 Voice Module pin------Arduino pin
 VCC	                  5V
 GND                 	GND
