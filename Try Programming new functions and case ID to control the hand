@@ -1,0 +1,203 @@
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+#include "DFRobot_DF2301Q.h"
+
+// =====================
+// Voice module (I2C)
+// how it communicates with different sensors using the SDA and SCL pin ports
+// =======================
+DFRobot_DF2301Q_I2C asr;
+
+// ====================
+// PCA9685 Servo Driver = the board that controls all the motors
+// =======================
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+
+// =======================
+// Servo settings frequencies
+// ====================
+#define SERVO_MIN 150   // Minimum pulse length = moves motor angle 0
+#define SERVO_MAX 600   // Maximum pulse length = move motor angle 180
+
+
+
+// motor numbers = what finger it controls:
+// 0 = Thumb
+// 1 = Index
+// 2 = Middle
+// 3 = Ring
+// 4 = Pinky
+int servos[] = {0, 1, 2, 3, 4}; //motors numbered in order starting at 0 to 4 = each controls a specific finger
+const int SERVO_COUNT = sizeof(servos) / sizeof(servos[0]);
+
+// Store current servo angles
+int servoAngles[SERVO_COUNT] = {0, 0, 0, 0, 0};
+
+// =======================
+// Convert angle → PWM pulse
+
+// =======================
+int angleToPulse(int angle) 
+{
+
+// angle 0 = servo min
+// angle 180 = servo max
+  return map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
+}
+
+// =======================
+// Move ONE servo
+// =======================
+void moveServo(int servoIndex, int angle) 
+{
+  if (servoIndex < 0 || servoIndex >= SERVO_COUNT) return;
+
+  servoAngles[servoIndex] = angle;
+  int pulse = angleToPulse(angle);
+  pwm.setPWM(servos[servoIndex], 0, pulse);
+}
+
+// =====================
+// Move ALL servos
+// =======================
+void moveAllServos(int angle) 
+{
+  //we start at motor #0 (int i = 0) and adds 1 until reaching all 5 motors (i++)
+  for (int i = 0; i < SERVO_COUNT; i++) 
+  {
+    moveServo(i, angle);
+  }
+}
+
+// =======================
+// Smooth movement for gestures
+// =======================
+void moveServosSmooth(int targetAngles[]) 
+{
+  bool moving = true;
+
+  while (moving) 
+  {
+    moving = false;
+
+    for (int i = 0; i < SERVO_COUNT; i++) {
+      if (servoAngles[i] < targetAngles[i]) {
+        servoAngles[i]++;
+        moving = true;
+      } else if (servoAngles[i] > targetAngles[i]) {
+        servoAngles[i]--;
+        moving = true;
+      }
+
+      pwm.setPWM(servos[i], 0, angleToPulse(servoAngles[i]));
+    }
+
+    //speed of the motor
+    delay(9);
+  }
+}
+
+// =======================
+// HAND GESTURES
+// =======================
+
+// lets try to make fist  (all fingers closed)
+void fist() 
+
+// resets all motors at the beginning = 180 degrees
+{ 
+  //remember = 180 for Each MOTOR, thats why we have it 5 times for each finger
+  int target[] = {180, 180, 180, 180, 180};
+  moveServosSmooth(target);
+}//end function
+
+
+// #1 Paper (all fingers open) & we get to title it
+void openHand() 
+
+{
+  int target[] = {0, 0, 0, 0, 0};
+  moveServosSmooth(target);
+}
+
+//Give a try: make a peace sign or anything like rock and roll for #@
+//start with Example "void scissors() (name it anything u want) just like for "void openHand()"
+
+
+
+
+
+
+
+
+
+
+
+// =======================
+// SETUP
+// =======================
+void setup() 
+{
+  Wire.begin();
+
+  // Initialize PCA9685
+  pwm.begin();
+  pwm.setPWMFreq(50);
+  delay(10);
+
+  // Initialize voice module
+  while (!asr.begin()) 
+  {
+    delay(1000);
+  }
+
+  // Start with open hand
+  openHand();
+}
+
+// =======================
+
+
+// LOOP (Voice Commands) repeats the command every time u say phrase associated with the case
+void loop()
+{
+  int CMDID = asr.getCMDID();
+
+  switch (CMDID) 
+  {
+
+//"case" is the id number = we start at 5 based on their website chart
+//openHand(); = is the function we are using for this id we previosly made earlier
+//break; = is to stop once it completes the task
+
+    case 5:  // "say 1 for Open hand"
+      openHand();
+      break;
+
+    //Give it a try
+    case 6:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    default:
+      break;
+      //ends
+  }
+
+  delay(100);
+}
