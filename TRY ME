@@ -1,3 +1,5 @@
+//LIBRARIES we used to communicate with different modules/sensors
+
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 #include "DFRobot_DF2301Q.h"
