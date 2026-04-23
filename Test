@@ -1,0 +1,215 @@
+// =======================
+// LIBRARIES
+// =======================
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+#include "DFRobot_DF2301Q.h"
+
+// =======================
+// Voice module (I2C)
+// =======================
+DFRobot_DF2301Q_I2C asr;
+
+// =======================
+// PCA9685 Servo Driver
+// =======================
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
+
+// =======================
+// Servo settings
+// =======================
+#define SERVO_MIN 150
+#define SERVO_MAX 600
+
+// =======================
+// Finger mapping (NEW 🔥)
+// =======================
+#define THUMB  0
+#define INDEX  1
+#define MIDDLE 2
+#define RING   3
+#define PINKY  4
+
+// =======================
+// Servo channels
+// =======================
+int servos[] = {0, 1, 2, 3, 4};
+const int SERVO_COUNT = 5;
+
+// Store current angles
+int servoAngles[SERVO_COUNT] = {0, 0, 0, 0, 0};
+
+// =======================
+// Convert angle → PWM
+// =======================
+int angleToPulse(int angle) 
+{
+  return map(angle, 0, 180, SERVO_MIN, SERVO_MAX);
+}
+
+// =======================
+// Move ONE servo
+// =======================
+void moveServo(int servoIndex, int angle) 
+{
+  if (servoIndex < 0 || servoIndex >= SERVO_COUNT) return;
+
+  servoAngles[servoIndex] = angle;
+  pwm.setPWM(servos[servoIndex], 0, angleToPulse(angle));
+}
+
+// =======================
+// Move ALL servos
+// =======================
+void moveAllServos(int angle) 
+{
+  for (int i = 0; i < SERVO_COUNT; i++) 
+  {
+    moveServo(i, angle);
+  }
+}
+
+// =======================
+// Smooth movement
+// =======================
+void moveServosSmooth(int targetAngles[]) 
+{
+  bool moving = true;
+
+  while (moving) 
+  {
+    moving = false;
+
+    for (int i = 0; i < SERVO_COUNT; i++) 
+    {
+      if (servoAngles[i] < targetAngles[i]) 
+      {
+        servoAngles[i]++;
+        moving = true;
+      } 
+      else if (servoAngles[i] > targetAngles[i]) 
+      {
+        servoAngles[i]--;
+        moving = true;
+      }
+
+      pwm.setPWM(servos[i], 0, angleToPulse(servoAngles[i]));
+    }
+
+    delay(9); // speed control
+  }
+}
+
+// =======================
+// HAND GESTURES
+// =======================
+
+// ✊ Fist
+void fist() 
+{
+  int target[SERVO_COUNT];
+
+  target[THUMB]  = 180;
+  target[INDEX]  = 180;
+  target[MIDDLE] = 180;
+  target[RING]   = 180;
+  target[PINKY]  = 180;
+
+  moveServosSmooth(target);
+}
+
+// ✋ Open hand
+void openHand() 
+{
+  int target[SERVO_COUNT];
+
+  target[THUMB]  = 0;
+  target[INDEX]  = 0;
+  target[MIDDLE] = 0;
+  target[RING]   = 0;
+  target[PINKY]  = 0;
+
+  moveServosSmooth(target);
+}
+
+// ✌️ Peace sign
+void peaceSign()
+{
+  int target[SERVO_COUNT];
+
+  target[THUMB]  = 180;
+  target[INDEX]  = 0;
+  target[MIDDLE] = 0;
+  target[RING]   = 180;
+  target[PINKY]  = 180;
+
+  moveServosSmooth(target);
+}
+
+// 👍 Thumbs up
+void thumbsUp()
+{
+  int target[SERVO_COUNT];
+
+  target[THUMB]  = 0;
+  target[INDEX]  = 180;
+  target[MIDDLE] = 180;
+  target[RING]   = 180;
+  target[PINKY]  = 180;
+
+  moveServosSmooth(target);
+}
+
+// =======================
+// SETUP
+// =======================
+void setup() 
+{
+  Wire.begin();
+
+  // Initialize PCA9685
+  pwm.begin();
+  pwm.setPWMFreq(50);
+  delay(10);
+
+  // Initialize voice module
+  while (!asr.begin()) 
+  {
+    delay(1000);
+  }
+
+  // Start open
+  openHand();
+}
+
+// =======================
+// LOOP (Voice Commands)
+// =======================
+void loop()
+{
+  int CMDID = asr.getCMDID();
+
+  switch (CMDID) 
+  {
+    case 5:  // Open hand
+      openHand();
+      break;
+
+    case 6:  // Fist
+      fist();
+      break;
+
+    case 7:  // Peace sign
+      peaceSign();
+      break;
+
+    case 8:  // Thumbs up
+      thumbsUp();
+      break;
+
+    default:
+      break;
+  }
+
+  delay(100);
+}
